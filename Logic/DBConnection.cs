@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Configuration;
 using System.Data.SqlClient;
+using System.Data;
 
 namespace DBConnect.Logic
 {
@@ -15,11 +16,30 @@ namespace DBConnect.Logic
             return ConfigurationManager.ConnectionStrings["sqlsvr"].ConnectionString;
         }
 
-        public static ExecQuery(string query)
+        public static DataRowCollection ExecQuery(string query)
         {
-            SqlConnection con = null;
-            SqlCommand cmd = null;
-
+            DataTable dataTable = new DataTable();
+            string connStr = GetConnectionString();
+            using (var conn = new SqlConnection(connStr))
+            using (var cmd = conn.CreateCommand())
+            {
+                try
+                {
+                    conn.Open();
+                    cmd.CommandText = query;
+                    dataTable.Load(cmd.ExecuteReader());
+                    return dataTable.Rows;
+                }
+                catch (SqlException e)
+                {
+                    Console.WriteLine(e.Message);
+                    throw e;
+                }
+                finally
+                {
+                    conn.Close();
+                }
+            }
         }
     }
 }
